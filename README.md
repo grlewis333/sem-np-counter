@@ -14,3 +14,10 @@ Overview:
 See <a href='https://user-images.githubusercontent.com/30181254/110630828-c59a3b80-819d-11eb-8f7b-233b8a692fcf.mp4'>video</a> for more details.
 
 <img src='https://github.com/grlewis333/sem-np-counter/blob/main/initial_pic.png' width=400>
+
+If you want to build your own .exe from the code here directly:
+1. Install pyinstaller
+2. Navigate to the repo directory from the command prompt
+3. Run: pyinstaller --onedir --add-data="gui_draft_2.ui;." --add-data="logo.png;." --add-data="initial_pic.png;." gui_code.py
+
+(Note this is compatible with Matplotlib 3.0.4)
