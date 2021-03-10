@@ -11,7 +11,6 @@ Overview:
 5.	After identifying all shapes in an image, categorise them as hexagons or rods and then save these measurements to two separate .csv files.
 6.	You can then move onto the next image in the folder to continue your measurements.
 
-See video for more details.
+See <a href='https://user-images.githubusercontent.com/30181254/110630828-c59a3b80-819d-11eb-8f7b-233b8a692fcf.mp4'>video</a> for more details.
 
-[![Watch the video](https://github.com/grlewis333/sem-np-counter/blob/main/initial_pic.png?raw=true)](https://user-images.githubusercontent.com/30181254/110630828-c59a3b80-819d-11eb-8f7b-233b8a692fcf.mp4)
-
+<img src='https://github.com/grlewis333/sem-np-counter/blob/main/initial_pic.png' width=400>
