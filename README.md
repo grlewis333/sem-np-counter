@@ -12,3 +12,4 @@ Overview:
 6.	You can then move onto the next image in the folder to continue your measurements.
 
 See video for more details.
+https://user-images.githubusercontent.com/30181254/110630828-c59a3b80-819d-11eb-8f7b-233b8a692fcf.mp4
