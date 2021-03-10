@@ -20,4 +20,3 @@ If you want to build your own .exe from the code here directly:
 2. Navigate to the repo directory from the command prompt
 3. Run: pyinstaller --onedir --add-data="gui_draft_2.ui;." --add-data="logo.png;." --add-data="initial_pic.png;." gui_code.py
 
-(Note this is compatible with Matplotlib 3.0.4)
