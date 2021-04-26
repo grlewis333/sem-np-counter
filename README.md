@@ -1,7 +1,7 @@
 # sem-np-counter
 GUI for measuring the size of nanoparticles from SEM images.
 
-Program can be downloaded from <a href="https://www.dropbox.com/s/9801947k5b12l8h/gui_code.zip?dl=0">here</a>.
+Program can be downloaded from <a href="https://www.dropbox.com/s/9801947k5b12l8h/gui_code.zip?dl=0">here</a>. (Extract zipped contents and then run the gui_code.exe file).
 
 Overview:
 1.	Load an SEM .tif file of some nanoparticles
@@ -15,8 +15,14 @@ See <a href='https://user-images.githubusercontent.com/30181254/110630828-c59a3b
 
 <img src='https://github.com/grlewis333/sem-np-counter/blob/main/initial_pic.png' width=400>
 
-If you want to build your own .exe from the code here directly:
-1. Install pyinstaller
-2. Navigate to the repo directory from the command prompt
-3. Run: pyinstaller --onedir --add-data="gui_draft_2.ui;." --add-data="logo.png;." --add-data="initial_pic.png;." gui_code.py
+If you want to work directly from the terminal:
+1. Create a fresh conda environment 'conda create -n counting_env'
+2. Activate the environment 'conda activate counting_env'
+3. Install necessary modules 'conda install -c defaults -c conda-forge -c anaconda opencv matplotlib numpy tifffile pyqt'
+4. Navigate to the directory where you downloaded the code 'cd path-to-download\sem-np-counter-main'
+5. Run the program from here 'python gui_code.py'
 
+If you want to build your own .exe from the code here directly:
+1. Install pyinstaller 'conda install -c conda-forge pyinstaller'
+2. Navigate to the repo directory from the command prompt
+3. Run: 'pyinstaller --onedir --add-data="gui_draft_2.ui;." --add-data="logo.png;." --add-data="initial_pic.png;." gui_code.py'
