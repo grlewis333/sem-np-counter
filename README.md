@@ -1,7 +1,7 @@
 # sem-np-counter
 GUI for measuring the size of nanoparticles from SEM images.
 
-Program can be downloaded from <a href="https://www.dropbox.com/s/9801947k5b12l8h/gui_code.zip?dl=0">here</a>. (Extract zipped contents and then run the gui_code.exe file).
+Program can be downloaded from <a href="https://www.dropbox.com/s/b48pgrjz763dh8e/gui_code2.zip?dl=0">here</a>. (Extract zipped contents and then run the gui_code.exe file).
 
 Overview:
 1.	Load an SEM .tif file of some nanoparticles
