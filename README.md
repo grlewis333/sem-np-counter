@@ -19,8 +19,9 @@ If you want to work directly from the terminal:
 1. Create a fresh conda environment 'conda create -n counting_env'
 2. Activate the environment 'conda activate counting_env'
 3. Install necessary modules 'conda install -c defaults -c conda-forge -c anaconda opencv matplotlib numpy tifffile pyqt'
-4. Navigate to the directory where you downloaded the code 'cd path-to-download\sem-np-counter-main'
-5. Run the program from here 'python gui_code.py'
+4. (If you would like to be able to use the jupyter notebook for demonstration, you should follow this up with 'conda install -c conda-forge jupyterlab')
+5. Navigate to the directory where you downloaded the code 'cd path-to-download\sem-np-counter-main'
+6. Run the program from here 'python gui_code.py'
 
 If you want to build your own .exe from the code here directly:
 1. Install pyinstaller 'conda install -c conda-forge pyinstaller'
