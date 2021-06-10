@@ -11,6 +11,8 @@ import types # for scroll
 import csv # for saving
 import time # for notifying
 from datetime import datetime
+import logging
+logger = logging.Logger('catch_all')
 
 # Set fake Windows App ID to trick taskbar into displaying icon
 import ctypes
@@ -124,8 +126,10 @@ class Ui(QtWidgets.QMainWindow):
         self.pushButton_addtofile.clicked.connect(self.add_to_file)
         self.pushButton_nextimage.clicked.connect(self.next_im)
         self.pushButton_previousimage.clicked.connect(self.previous_im)
-        self.pushButton_previousimage.clicked.connect(self.previous_im)
+       # self.pushButton_previousimage.clicked.connect(self.previous_im)
+        self.pushButton_zoom.clicked.connect(self.plot)
         self.checkBox_selectall.toggled.connect(self.select_all)
+        
         
         # Initialise shapes
         self.shapes = []
@@ -150,6 +154,13 @@ class Ui(QtWidgets.QMainWindow):
             self.im,self.raw_im,self.px,self.w,self.h = cf.read_tif(self.fpath) # load image
             self.ax.imshow(self.raw_im,cmap='Greys_r') # add image to axis
             self.plot() # plot axis
+            
+            # Clear current shapes from sidebar
+            cs = self.scrollAreaWidgetContents.children()
+            keep_boxs = cs[8::4]
+            for i,w in enumerate(keep_boxs):
+                w.setChecked(False)
+            self.remove_shape_row()
 
             # prompt user input if metadata is not present
             if np.isnan(self.px):
@@ -167,8 +178,9 @@ class Ui(QtWidgets.QMainWindow):
                 self.label_pxwidth.setText('Pixel width: %.3f px per nm' % (self.px*1e9))
                 self.label_imdim.setText('Image dimensions: %i nm x %i nm' % (self.w*1e9,self.h*1e9))
                 self.label_statusbar.setText(r'Status: Idle')
-        except:
-            self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
     
     def plot(self):
         """ Plots the image that is currently assigned to self.ax 
@@ -178,10 +190,11 @@ class Ui(QtWidgets.QMainWindow):
         plt.tight_layout()
         
         # Plot with zoom functionality
-        f = zoom_factory(self,self.ax)
+        f = zoom_factory(self,self.ax,base_scale=self.horizontalSlider_zoom.value())
         
         # refresh canvas 
         self.canvas.draw()
+        #self.label_statusbar.setText(str(self.horizontalSlider_zoom.value()))
         
     def update_calibration(self):
         """ Runs automatic calibration based on scalebar size input by user """
@@ -196,8 +209,9 @@ class Ui(QtWidgets.QMainWindow):
             self.label_pxwidth.setText('Pixel width: %.3f px per nm' % (self.px*1e9))
             self.label_imdim.setText('Image dimensions: %i nm x %i nm' % (self.w*1e9,self.h*1e9))
             self.label_statusbar.setText(r'Status: Idle')
-        except:
-            self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
         
     def auto_identify(self):
         """ Check auto identification settings and run searching algorithms """
@@ -250,8 +264,9 @@ class Ui(QtWidgets.QMainWindow):
 
             self.label_statusbar.setText(r'Status: Idle')
         
-        except:
-            self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
         
     def add_shapes(self,shapes):
         """ Adds all shapes to current shapes bar"""
@@ -328,8 +343,9 @@ class Ui(QtWidgets.QMainWindow):
 
             self.checkBox_selectall.setChecked(True)
         
-        except:
-            self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
         
     def toggle_shapes(self):
         """ Switch between showing/not showing shape outlines over image """
@@ -351,157 +367,202 @@ class Ui(QtWidgets.QMainWindow):
                 self.ax = self.figure.add_subplot(111) # create an axis
                 self.ax.imshow(self.raw_im,cmap='Greys_r') # add image to axis
                 self.plot() # plot axis
-        except:
-            self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
             
     def manualidentify(self):
         try:
+            # Plot current shapes in light blue
             self.label_statusbar.setText(r'Status: Add points manually')
             self.figure.clear() # clear old figure
             self.ax = self.figure.add_subplot(111) # create an axis
             self.ax.imshow(self.raw_im,cmap='Greys_r') # add image to axis
             cf.plot_shapes(self.shapes,self.raw_im,self.ax,cols=['dodgerblue'])
             self.plot()
-
-            # Get new shapes from user input
-            new_s = cf.manual_detection(self.raw_im)
-
-            # add to existing shapes
-            self.shapes = np.concatenate((self.shapes,new_s))
-
-            #remove identical shapes
-            self.shapes = cf.remove_identical_shapes(self.shapes,threshold=.3)
-
-            #plot
-            self.figure.clear() # clear old figure
-            self.ax = self.figure.add_subplot(111) # create an axis
-            # Fit circles to shapes and plot
-            cents,rads = cf.fit_circles(self.shapes)
-            ds = np.array(cf.calibrate_radii(rads,self.px))
-            cf.plot_circles(self.im,self.ax,self.raw_im,self.shapes,cents,rads,ds)
-            self.plot()
-
-            # Adjust rows
-            layout = self.gridLayout_13
-            cs = self.scrollAreaWidgetContents.children()
-            for i,w in enumerate(cs):
-                if i > 4:
-                    layout.removeWidget(w)
-                    w.deleteLater()
-                    w = None
-            # Add rows for shapes still there
-            for i,s in enumerate(self.shapes):
-                self.add_shape_row(i)
-
-            # Toggle shape view on
-            self.checkBox_shapetoggle.setChecked(True)
-
-            self.label_statusbar.setText(r'Status: Idle')  
-        except:
             
-            self.label_statusbar.setText(r'Status: Error')
+            # Manual input
+            global data # this will hold user input points
+            data = []
+            all_s = []
+            # Get user input
+            def mouseClick(event):
+                """ Function that will respond to mouse events """
+                global data
+                ax=event.inaxes
+                
+                # store click and plot point
+                if event.button == 1: 
+                    self.ax.plot(event.xdata,event.ydata,'r+')
+                    data.append([event.xdata,event.ydata])
+                
+                 # remove last point from data and plot white cross
+                if event.button == 2:
+                    p = data[-1]
+                    ax.plot(p[0],p[1],'wx')
+                    data.pop()
+                    
+                # Create shape from points and stop input
+                if event.button == 3:
+                    # stop the input
+                    fig = ax.get_figure()
+                    fig.canvas.mpl_disconnect(cid)
+                    
+                    # Convert points to shapes
+                    new_s = cf.manual_detection(data)
+                    
+                    # add to existing shapes
+                    self.shapes = np.concatenate((self.shapes,new_s))
+
+                    #remove identical shapes
+                    self.shapes = cf.remove_identical_shapes(self.shapes,threshold=.3)
+
+                    #plot
+                    self.figure.clear() # clear old figure
+                    self.ax = self.figure.add_subplot(111) # create an axis
+                    
+                    # Fit circles to shapes and plot
+                    cents,rads = cf.fit_circles(self.shapes)
+                    ds = np.array(cf.calibrate_radii(rads,self.px))
+                    cf.plot_circles(self.im,self.ax,self.raw_im,self.shapes,cents,rads,ds)
+                    self.plot()
+
+                    # Adjust rows
+                    layout = self.gridLayout_13
+                    cs = self.scrollAreaWidgetContents.children()
+                    for i,w in enumerate(cs):
+                        if i > 4:
+                            layout.removeWidget(w)
+                            w.deleteLater()
+                            w = None
+                    
+                    # Add rows for shapes still there
+                    for i,s in enumerate(self.shapes):
+                        self.add_shape_row(i)
+
+                    # Toggle shape view on
+                    self.checkBox_shapetoggle.setChecked(True)
+
+                    self.label_statusbar.setText(r'Status: Idle')  
+                    
+                    
+                fig=ax.get_figure()
+                fig.canvas.draw_idle()
+
+            fig = self.ax.get_figure()
+            cid = fig.canvas.mpl_connect('button_press_event', mouseClick)
+            
+            return mouseClick
+    
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
         
     def file_output(self):
         """ Connects to file input button
         Opens file explorer for user to select image then plots it """
         try:
-            self.label_statusbar.setText(r'Status: Choosing output file')
+            try:
+                self.label_statusbar.setText(r'Status: Choosing output file')
 
-            # Get filepath from file explorer
-            files_types = "CSV (*.csv)"
-            default_name = datetime.today().strftime('%Y-%m-%d') + '.csv'
-            self.fpath_out, _ = QtWidgets.QFileDialog.getSaveFileName(None, 'Choose output filepath', default_name, filter = files_types, options=QtWidgets.QFileDialog.DontConfirmOverwrite)
-
-
-            # Get selected folder
-            fpath = self.fpath_out
-            split = fpath.split(sep='/')
-            folder = ''
-            for i in split[:-1]:
-                folder += i + '/'
-
-            _, _, fnames = next(walk(folder))
+                # Get filepath from file explorer
+                files_types = "CSV (*.csv)"
+                default_name = datetime.today().strftime('%Y-%m-%d') + '.csv'
+                self.fpath_out, _ = QtWidgets.QFileDialog.getSaveFileName(None, 'Choose output filepath', default_name, filter = files_types, options=QtWidgets.QFileDialog.DontConfirmOverwrite)
 
 
-            if split[-1] in fnames:
-                # file already exists
-                name = split[-1].split(sep='.')[0]
-                try:
-                    name.split(sep='_HEX')[1]
-                    name = name.split(sep='_HEX')[0]
-                except:
-                    name.split(sep='_ROD')[1]
-                    name = name.split(sep='_ROD')[0]
-                self.fpath_hex = folder+name+'_HEX.csv'
-                self.fpath_rod = folder+name+'_ROD.csv'
+                # Get selected folder
+                fpath = self.fpath_out
+                split = fpath.split(sep='/')
+                folder = ''
+                for i in split[:-1]:
+                    folder += i + '/'
 
-            else:
-                # create file
-                name = split[-1].split(sep='.')[0] # name without suffix
-                self.fpath_hex = folder+name+'_HEX.csv'
-                self.fpath_rod = folder+name+'_ROD.csv'
-                with open(self.fpath_hex, 'w', newline='') as csvfile:
-                    spamwriter = csv.writer(csvfile, delimiter=',',
-                                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    spamwriter.writerow(['Size (hex) / nm'] + ['fpath'])
-
-                with open(self.fpath_rod, 'w', newline='') as csvfile:
-                    spamwriter = csv.writer(csvfile, delimiter=',',
-                                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    spamwriter.writerow(['Size (rod) / nm'] + ['Filepath'])
-
-            self.label_output_path.setText(folder+name+'_XXX.csv')
-            self.label_statusbar.setText(r'Status: Idle')
-        
-        except:
-            self.label_statusbar.setText(r'Status: Choosing output file')
-
-            # Get filepath from file explorer
-            files_types = "CSV (*.csv)"
-            default_name = datetime.today().strftime('%Y-%m-%d') + '.csv'
-            self.fpath_out, _ = QtWidgets.QFileDialog.getSaveFileName(None, 'Choose output filepath', default_name, filter = files_types, options=QtWidgets.QFileDialog.DontConfirmOverwrite)
+                _, _, fnames = next(walk(folder))
 
 
-            # Get selected folder
-            fpath = self.fpath_out
-            split = fpath.split(sep='/')
-            folder = ''
-            for i in split[:-1]:
-                folder += i + '/'
+                if split[-1] in fnames:
+                    # file already exists
+                    name = split[-1].split(sep='.')[0]
+                    try:
+                        name.split(sep='_HEX')[1]
+                        name = name.split(sep='_HEX')[0]
+                    except:
+                        name.split(sep='_ROD')[1]
+                        name = name.split(sep='_ROD')[0]
+                    self.fpath_hex = folder+name+'_HEX.csv'
+                    self.fpath_rod = folder+name+'_ROD.csv'
 
-            _, _, fnames = next(walk(folder))
+                else:
+                    # create file
+                    name = split[-1].split(sep='.')[0] # name without suffix
+                    self.fpath_hex = folder+name+'_HEX.csv'
+                    self.fpath_rod = folder+name+'_ROD.csv'
+                    with open(self.fpath_hex, 'w', newline='') as csvfile:
+                        spamwriter = csv.writer(csvfile, delimiter=',',
+                                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                        spamwriter.writerow(['Size (hex) / nm'] + ['fpath'])
+
+                    with open(self.fpath_rod, 'w', newline='') as csvfile:
+                        spamwriter = csv.writer(csvfile, delimiter=',',
+                                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                        spamwriter.writerow(['Size (rod) / nm'] + ['Filepath'])
+
+                self.label_output_path.setText(folder+name+'_XXX.csv')
+                self.label_statusbar.setText(r'Status: Idle')
+
+            except:
+                self.label_statusbar.setText(r'Status: Choosing output file')
+
+                # Get filepath from file explorer
+                files_types = "CSV (*.csv)"
+                default_name = datetime.today().strftime('%Y-%m-%d') + '.csv'
+                self.fpath_out, _ = QtWidgets.QFileDialog.getSaveFileName(None, 'Choose output filepath', default_name, filter = files_types, options=QtWidgets.QFileDialog.DontConfirmOverwrite)
 
 
-            if split[-1] in fnames:
-                # file already exists
-                name = split[-1].split(sep='.')[0]
-                try:
-                    name.split(sep='_HEX')[1]
-                    name = name.split(sep='_HEX')[0]
-                except:
-                    name.split(sep='_ROD')[1]
-                    name = name.split(sep='_ROD')[0]
-                self.fpath_hex = folder+name+'_HEX.csv'
-                self.fpath_rod = folder+name+'_ROD.csv'
+                # Get selected folder
+                fpath = self.fpath_out
+                split = fpath.split(sep='/')
+                folder = ''
+                for i in split[:-1]:
+                    folder += i + '/'
 
-            else:
-                # create file
-                name = split[-1].split(sep='.')[0] # name without suffix
-                self.fpath_hex = folder+name+'_HEX.csv'
-                self.fpath_rod = folder+name+'_ROD.csv'
-                with open(self.fpath_hex, 'w', newline='') as csvfile:
-                    spamwriter = csv.writer(csvfile, delimiter=',',
-                                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    spamwriter.writerow(['Size (hex) / nm'] + ['fpath'])
+                _, _, fnames = next(walk(folder))
 
-                with open(self.fpath_rod, 'w', newline='') as csvfile:
-                    spamwriter = csv.writer(csvfile, delimiter=',',
-                                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
-                    spamwriter.writerow(['Size (rod) / nm'] + ['Filepath'])
 
-            self.label_output_path.setText(folder+name+'_XXX.csv')
-            self.label_statusbar.setText(r'Status: Idle')
-            self.label_statusbar.setText(r'Status: Error')
+                if split[-1] in fnames:
+                    # file already exists
+                    name = split[-1].split(sep='.')[0]
+                    try:
+                        name.split(sep='_HEX')[1]
+                        name = name.split(sep='_HEX')[0]
+                    except:
+                        name.split(sep='_ROD')[1]
+                        name = name.split(sep='_ROD')[0]
+                    self.fpath_hex = folder+name+'_HEX.csv'
+                    self.fpath_rod = folder+name+'_ROD.csv'
+
+                else:
+                    # create file
+                    name = split[-1].split(sep='.')[0] # name without suffix
+                    self.fpath_hex = folder+name+'_HEX.csv'
+                    self.fpath_rod = folder+name+'_ROD.csv'
+                    with open(self.fpath_hex, 'w', newline='') as csvfile:
+                        spamwriter = csv.writer(csvfile, delimiter=',',
+                                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                        spamwriter.writerow(['Size (hex) / nm'] + ['fpath'])
+
+                    with open(self.fpath_rod, 'w', newline='') as csvfile:
+                        spamwriter = csv.writer(csvfile, delimiter=',',
+                                                quotechar='"', quoting=csv.QUOTE_MINIMAL)
+                        spamwriter.writerow(['Size (rod) / nm'] + ['Filepath'])
+
+                self.label_output_path.setText(folder+name+'_XXX.csv')
+                self.label_statusbar.setText(r'Status: Idle')
+                self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
         
     def add_to_file(self):
         # Need to define ds globally and have it update like shapes does.
@@ -545,8 +606,9 @@ class Ui(QtWidgets.QMainWindow):
             time.sleep(3) # Wait so that user sees saving status
             self.label_statusbar.setText(r'Status: Idle')
             
-        except:
-            self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
         
         
     def next_im(self):
@@ -582,9 +644,10 @@ class Ui(QtWidgets.QMainWindow):
             fpath = folder + all_tifs[ind]
 
             self.file_input(fpath=fpath)
-        except:
-                self.label_statusbar.setText(r'Status: Error')
-
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
+            
     def previous_im(self):
         """ open previous tif in folder """
         try:
@@ -611,8 +674,9 @@ class Ui(QtWidgets.QMainWindow):
             fpath = folder + all_tifs[ind]
 
             self.file_input(fpath=fpath)
-        except:
-            self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
         
     def select_all(self):
         try:
@@ -627,8 +691,9 @@ class Ui(QtWidgets.QMainWindow):
                 keep_boxs = cs[8::4]
                 for i,w in enumerate(keep_boxs):
                     w.setChecked(False)
-        except:
-            self.label_statusbar.setText(r'Status: Error')
+        except Exception as e:
+            m = str(e)
+            self.label_statusbar.setText(r'Status: Error - %s' % m)
 
 # Launch GUI
 

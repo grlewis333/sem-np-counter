@@ -7,6 +7,7 @@ from os import walk                       # Get filepaths automatically
 import warnings
 warnings.filterwarnings("ignore")         # Remove unnecessary pyplot warnings
 import matplotlib
+import time
 
 def read_tif(fpath,scale_bar_val=None,show_cal=False):
     """ Tries to read FEI SEM .tif image from filepath
@@ -385,17 +386,16 @@ def full_count_process(im,raw_im,px,w,h,ax, return_vals = True,
     if return_vals == True:
         return ds,errs,filtered
     
-def manual_detection(im,max_shapes=20):
-    """ Manually click out the boundary of a shape in the event that auto-filtering fails"""
+def manual_detection(data):
+    """ Convert list of manually input points into contours for next step"""
     #swap_pyplot_backend(plot_inline=False)
     # Show image
-    #plt.imshow(im,cmap='Greys_r')
+    #ax.imshow(im,cmap='Greys_r')
     #plt.axis('off')
     
     all_points = []
     all_s = []
-    # Get user input
-    points = plt.ginput(n=20, show_clicks=True,mouse_stop=3,mouse_pop=2,timeout=60)
+    points = data
     if points == []:
         pass
     else:
@@ -415,7 +415,6 @@ def manual_detection(im,max_shapes=20):
         s2 = np.array(points2).reshape((-1,1,2)).astype(np.int32)
         all_s.append(s2)
 
-    
     return all_s
 
 def swap_pyplot_backend(plot_inline=True):
